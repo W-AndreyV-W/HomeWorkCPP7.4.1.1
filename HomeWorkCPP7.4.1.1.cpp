@@ -1,84 +1,62 @@
 ﻿#include <iostream>
 #include <fstream>
 
-class PrintableAsText {
+class Printable {
 
 public:
 
-    virtual std::string printable(const std::string& data) const {
+    virtual std::string printable(const std::string& data) const = 0;
+};
+
+class PrintableAsText : public Printable {
+
+public:
+
+    std::string printable(const std::string& data) const override {
 
         return data;
     }
 };
 
-class Data : public PrintableAsText {
+class PrintableAsHTML : public Printable {
 
 public:
 
-    explicit Data(PrintableAsText* _printableastext) : printableastext(_printableastext) {}
+    std::string printable(const std::string& data) const override{
 
-    PrintableAsText* printableastext;
-};
-
-class PrintableAsHTML : public Data {
-
-public:
-
-    explicit PrintableAsHTML(PrintableAsText* _printableastext) :Data(_printableastext) {}
-
-    virtual std::string printable(const std::string& data) const {
-
-        return "<html>" + printableastext->printable(data) + "<html/>";
+        return "<html>" + data + "<html/>";
     }
 };
 
-class PrintableAsJSON : public Data {
+class PrintableAsJSON : public Printable {
 
 public:
 
-    explicit PrintableAsJSON(PrintableAsText* _printableastext) :Data(_printableastext) {}
+    std::string printable(const std::string& data) const override{
 
-    virtual std::string printable(const std::string& data) const {
-
-        return "{ \"data\": \"" + printableastext->printable(data) + "\"}";
+        return "{ \"data\": \"" + data + "\"}";
     }
 };
 
 
 
-void saveTo(std::ofstream& out, const std::string data, PrintableAsText* printableastext) {
+void saveTo(std::ofstream& out, const std::string data, const Printable& printable) {
 
-    out << printableastext->printable(data);
+    out << printable.printable(data) << std::endl;
 }
-
-
-
-void saveToAsHTML(std::ofstream& out, const std::string& data) {
-
-    auto text_format = new PrintableAsHTML(new PrintableAsText());
-    saveTo(out, data, text_format);
-}
-
-void saveToAsJSON(std::ofstream& out, const std::string& data) {
-
-    auto text_format = new PrintableAsJSON(new PrintableAsText());
-    saveTo(out, data, text_format);
-}
-
-void saveToAsText(std::ofstream& out, const std::string& data) {
-
-    auto text_format = new PrintableAsText();
-    saveTo(out, data, text_format);
-}
-
-
 
 int main() {
 
     std::ofstream file("out.txt", std::ios::app);
     std::string messing("Hello World!");
 
-    saveToAsHTML(file, messing);
-    saveToAsJSON(file, messing);
-    saveToAsText(file, messing);
+    PrintableAsText printableAsText;
+    PrintableAsHTML printableAsHTML;
+    PrintableAsJSON printableAsJSON;
+
+    saveTo(file, messing, printableAsText);
+    saveTo(file, messing, printableAsHTML);
+    saveTo(file, messing, printableAsJSON);
+
+    file.close();
 }
